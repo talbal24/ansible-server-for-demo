@@ -22,14 +22,18 @@ deploy:
 
             # Build Ansible inventory
             echo "[webservers]" > /tmp/inventory.ini
-            echo "$EC2_IP ansible_user=ubuntu ansible_ssh_private_key_file=/tmp/demo_key.pem ansible_ssh_common_args=-o StrictHostKeyChecking=no" >> /tmp/inventory.ini
+            echo "$EC2_IP ansible_user=ubuntu ansible_ssh_private_key_file=/tmp/demo_key.pem ansible_ssh_common_args='-o StrictHostKeyChecking=no -o ConnectTimeout=10'" >> /tmp/inventory.ini
+
+            # Test raw SSH connectivity before running Ansible
+            echo "==> Testing SSH connectivity..."
+            ssh -i /tmp/demo_key.pem -o StrictHostKeyChecking=no -o ConnectTimeout=10 ubuntu@$EC2_IP "echo SSH OK" || echo "SSH FAILED - instance may not be ready yet"
 
             # Install Ansible
             pip3 install ansible --quiet
 
             # Wait for EC2 SSH to be ready
             echo "==> Waiting 30s for EC2 SSH to be ready..."
-            sleep 45
+            sleep 60
 
             # Run playbook
             ansible-playbook playbook.yml -i /tmp/inventory.ini

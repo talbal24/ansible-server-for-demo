@@ -1,0 +1,32 @@
+---
+# playbook.yml
+# This playbook installs Python and starts a simple HTTP server on port 8080.
+# It targets "all" hosts defined in your inventory file.
+
+- name: Deploy Simple HTTP Server
+  hosts: all
+  become: true  # Run tasks as sudo/root
+
+  tasks:
+
+    - name: Ensure Python3 is installed
+      ansible.builtin.package:
+        name: python3
+        state: present
+
+    - name: Create a simple index.html page
+      ansible.builtin.copy:
+        dest: /var/www/html/index.html
+        content: "<h1>Hello from Ansible + env zero!</h1>"
+        mode: "0644"
+
+    - name: Start HTTP server on port 8080
+      ansible.builtin.shell: |
+        nohup python3 -m http.server 8080 --directory /var/www/html \
+          > /tmp/http_server.log 2>&1 &
+      args:
+        executable: /bin/bash
+
+    - name: Print success message
+      ansible.builtin.debug:
+        msg: "HTTP server is running on port 8080!"

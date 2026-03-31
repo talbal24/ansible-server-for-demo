@@ -12,9 +12,13 @@ deploy:
 
             echo "==> EC2 IP is: $EC2_IP"
 
-            # Write SSH key to file
-            echo "$SSH_KEY" > /tmp/demo_key.pem
+            # Write SSH key to file (printf preserves newlines in PEM keys)
+            printf '%s\n' "$SSH_KEY" > /tmp/demo_key.pem
             chmod 600 /tmp/demo_key.pem
+
+            # Verify the key looks right
+            echo "==> SSH key preview (first line):"
+            head -1 /tmp/demo_key.pem
 
             # Build Ansible inventory
             echo "[webservers]" > /tmp/inventory.ini
@@ -25,7 +29,7 @@ deploy:
 
             # Wait for EC2 SSH to be ready
             echo "==> Waiting 30s for EC2 SSH to be ready..."
-            sleep 30
+            sleep 45
 
             # Run playbook
             ansible-playbook playbook.yml -i /tmp/inventory.ini

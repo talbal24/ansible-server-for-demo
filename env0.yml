@@ -3,6 +3,7 @@ version: 1
 deploy:
   steps:
     terraformApply:
+      name: "Ansible - Create HTTP Server"
       after:
         - echo "==> Terraform done. EC2 IP is $TERRAFORM_OUTPUT_instance_public_ip"
 

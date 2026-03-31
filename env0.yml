@@ -6,17 +6,28 @@ deploy:
       after:
         - name: "Ansible - Create HTTP Server"
           run: |
-            echo "$TERRAFORM_OUTPUT_private_key_pem" > /tmp/demo_key.pem
+            # Read TF outputs directly - more reliable than env vars, required for sensitive outputs
+            EC2_IP=$(terraform output -raw instance_public_ip)
+            SSH_KEY=$(terraform output -raw private_key_pem)
+
+            echo "==> EC2 IP is: $EC2_IP"
+
+            # Write SSH key to file
+            echo "$SSH_KEY" > /tmp/demo_key.pem
             chmod 600 /tmp/demo_key.pem
 
+            # Build Ansible inventory
             echo "[webservers]" > /tmp/inventory.ini
-            echo "$TERRAFORM_OUTPUT_instance_public_ip ansible_user=ubuntu ansible_ssh_private_key_file=/tmp/demo_key.pem ansible_ssh_common_args=-o StrictHostKeyChecking=no" >> /tmp/inventory.ini
+            echo "$EC2_IP ansible_user=ubuntu ansible_ssh_private_key_file=/tmp/demo_key.pem ansible_ssh_common_args=-o StrictHostKeyChecking=no" >> /tmp/inventory.ini
 
+            # Install Ansible
             pip3 install ansible --quiet
 
-            echo "==> Waiting for EC2 SSH to be ready..."
+            # Wait for EC2 SSH to be ready
+            echo "==> Waiting 30s for EC2 SSH to be ready..."
             sleep 30
 
+            # Run playbook
             ansible-playbook playbook.yml -i /tmp/inventory.ini
 
-            echo "==> Done! Visit http://$TERRAFORM_OUTPUT_instance_public_ip:8080"
+            echo "==> Done! Visit http://$EC2_IP:8080"
